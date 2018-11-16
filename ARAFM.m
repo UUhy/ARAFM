@@ -90,6 +90,9 @@ classdef ARAFM
             tmp = IBWread(filename);
             obj.scale = tmp.dx;
             obj.dim = size(tmp.y);
+            
+            %tmp.y stores 2D data in an [X Y C] matrix where C refers to
+            %each channel in sequence
             obj.data = tmp.y;
             
             %Determine the position of notes
@@ -119,32 +122,59 @@ classdef ARAFM
         %
         %   See also load, loadForce, showImage, showForce
             tmp = IBWread(filename);
-            obj.zsensor = tmp.y(:,1);
-            obj.amplitude = tmp.y(:,2);
+            obj.scale = tmp.dx;
+            obj.dim = size(tmp.y);
+            
+            %tmp.y stores 2D data in an [X Y C] matrix where C refers to
+            %each channel in sequence
+            obj.data = tmp.y;
         end
         
-        function obj = showImage(obj)
+        function obj = showImage(obj, varargin)
         %obj = showImage()
         %
         %   Output:
         %       obj     	:   ARAFM instance
+        %   
+        %   Input:
+        %       *display    :   boolean     :   display the plot?
+        %                   :   default     :   true
         %
         %   Description:
         %   Show the first Image from the dataset
         %
         %   See also load, loadForce, showImage, showForce
-            colormap(gray);
-            x = (1:obj.dim(2))*obj.scale(1)*1e6;
-            y = (1:obj.dim(1))*obj.scale(2)*1e6;
-            surf(x,y,obj.data(:,:,1),'LineStyle','none');
-            view(2);
-            axis square tight
-            xlabel('X [um]');
-            ylabel('Y [um]');
+            index = 0;
+            if nargin > 1
+                index = varargin{1};
+            end
+        
+            if index == 0
+                for i = 1:obj.dim(3)
+                    figure;
+                    colormap(gray);
+                    x = (1:obj.dim(2))*obj.scale(1)*1e6;
+                    y = (1:obj.dim(1))*obj.scale(2)*1e6;
+                    surf(x,y,obj.data(:,:,i),'LineStyle','none');
+                    view(2);
+                    axis square tight
+                    xlabel('X [um]');
+                    ylabel('Y [um]');
+                end
+            else
+                colormap(gray);
+                x = (1:obj.dim(2))*obj.scale(1)*1e6;
+                y = (1:obj.dim(1))*obj.scale(2)*1e6;
+                surf(x,y,obj.data(:,:,index),'LineStyle','none');
+                view(2);
+                axis square tight
+                xlabel('X [um]');
+                ylabel('Y [um]');
+            end
         end
         
         function [zGap, zEnd, zStart] = showForce(obj, varargin)
-        %obj = showImage()
+        %obj = showForce()
         %
         %   Output:
         %       zGap     	:   Estimated gap between tip and sample
@@ -164,6 +194,9 @@ classdef ARAFM
                 display = false;
             end
         
+            obj.zsensor = obj.data(:,1);
+            obj.amplitude = obj.data(:,2);
+            
             triggerIndex = find(obj.amplitude == min(obj.amplitude));
             nAverage = 20;
             triggerOffset = 10;
